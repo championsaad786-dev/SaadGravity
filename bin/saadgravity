@@ -2,8 +2,9 @@
 import sys
 import os
 
-# Ensure the package is on the path
-package_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+# Resolve symlinks so package_dir points to actual repo location
+real_path = os.path.realpath(__file__)
+package_dir = os.path.abspath(os.path.join(os.path.dirname(real_path), ".."))
 if package_dir not in sys.path:
     sys.path.insert(0, package_dir)
 
