@@ -1,0 +1,13 @@
+#!/usr/bin/env python3
+import sys
+import os
+
+# Ensure the package is on the path
+package_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+if package_dir not in sys.path:
+    sys.path.insert(0, package_dir)
+
+from saadgravity.cli import main
+
+if __name__ == "__main__":
+    main()
