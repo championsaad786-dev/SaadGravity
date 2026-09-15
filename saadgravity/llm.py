@@ -1,12 +1,20 @@
 import json
 import re
-from typing import List, Dict, Any, Tuple, Optional
+from typing import List, Dict, Any, Tuple
 import httpx
 from openai import OpenAI
 from .tools import TOOL_DEFINITIONS
 
+
 class LLMClient:
-    def __init__(self, api_base: str, api_key: str, model: str, temperature: float = 0.2, max_tokens: int = 4096):
+    def __init__(
+        self,
+        api_base: str,
+        api_key: str,
+        model: str,
+        temperature: float = 0.2,
+        max_tokens: int = 4096,
+    ):
         self.api_base = api_base.rstrip("/")
         self.api_key = api_key or "ollama"
         self.model = model
@@ -18,9 +26,7 @@ class LLMClient:
         # We configure httpx client with generous timeouts
         http_client = httpx.Client(timeout=180.0)
         self.client = OpenAI(
-            base_url=self.api_base,
-            api_key=self.api_key,
-            http_client=http_client
+            base_url=self.api_base, api_key=self.api_key, http_client=http_client
         )
 
     def check_connection(self) -> Tuple[bool, str]:
@@ -28,11 +34,16 @@ class LLMClient:
         try:
             models = self.client.models.list()
             model_names = [m.id for m in models.data]
-            return True, f"Connected to {self.api_base}. Available models: {', '.join(model_names[:5])}"
+            return (
+                True,
+                f"Connected to {self.api_base}. Available models: {', '.join(model_names[:5])}",
+            )
         except Exception as e:
             return False, f"Connection failed to {self.api_base}: {str(e)}"
 
-    def chat_completion(self, messages: List[Dict[str, Any]], use_tools: bool = True) -> Dict[str, Any]:
+    def chat_completion(
+        self, messages: List[Dict[str, Any]], use_tools: bool = True
+    ) -> Dict[str, Any]:
         """Send chat messages and get response with tool calls or text."""
         kwargs = {
             "model": self.model,
@@ -48,7 +59,7 @@ class LLMClient:
             response = self.client.chat.completions.create(**kwargs)
             choice = response.choices[0]
             message = choice.message
-            
+
             tool_calls = []
             if getattr(message, "tool_calls", None):
                 for tc in message.tool_calls:
@@ -56,11 +67,9 @@ class LLMClient:
                         args = json.loads(tc.function.arguments)
                     except Exception:
                         args = {"raw": tc.function.arguments}
-                    tool_calls.append({
-                        "id": tc.id,
-                        "name": tc.function.name,
-                        "arguments": args
-                    })
+                    tool_calls.append(
+                        {"id": tc.id, "name": tc.function.name, "arguments": args}
+                    )
 
             # Check if there is fallback text tool_call inside content
             content = message.content or ""
@@ -73,7 +82,7 @@ class LLMClient:
                 "role": "assistant",
                 "content": content,
                 "tool_calls": tool_calls,
-                "raw_message": message
+                "raw_message": message,
             }
         except Exception as e:
             # If native tools failed (e.g. model doesn't support tools parameter), retry without tools parameter
@@ -85,16 +94,20 @@ class LLMClient:
         """Fallback extractor for models that write tool calls inside code blocks."""
         calls = []
         # Pattern 1: ```tool_call ... ```
-        matches = re.findall(r"```(?:tool_call|json)\s*(\{.*?\})\s*```", text, re.DOTALL)
+        matches = re.findall(
+            r"```(?:tool_call|json)\s*(\{.*?\})\s*```", text, re.DOTALL
+        )
         for m in matches:
             try:
                 data = json.loads(m.strip())
                 if "name" in data and "arguments" in data:
-                    calls.append({
-                        "id": f"call_{len(calls)}",
-                        "name": data["name"],
-                        "arguments": data["arguments"]
-                    })
+                    calls.append(
+                        {
+                            "id": f"call_{len(calls)}",
+                            "name": data["name"],
+                            "arguments": data["arguments"],
+                        }
+                    )
             except Exception:
                 continue
         return calls

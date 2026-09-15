@@ -1,4 +1,3 @@
-import os
 import json
 from pathlib import Path
 
@@ -15,6 +14,7 @@ DEFAULT_CONFIG = {
     "theme": "dark",
 }
 
+
 def load_config() -> dict:
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     if not CONFIG_FILE.exists():
@@ -29,10 +29,12 @@ def load_config() -> dict:
     except Exception:
         return DEFAULT_CONFIG.copy()
 
+
 def save_config(cfg: dict):
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
+
 
 def update_config_key(key: str, value):
     cfg = load_config()
